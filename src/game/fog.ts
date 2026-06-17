@@ -85,19 +85,20 @@ export function getFogState(
 
     if (selectedPiece?.color === color) {
       const pathEnemySquares = options.revealLineOfSight
-        ? getAllPathEnemySquares(board, selectedPosition.row, selectedPosition.col, color)
-        : getFirstPathEnemySquares(board, selectedPosition.row, selectedPosition.col, color);
+        ? getPathEnemySquares(board, selectedPosition.row, selectedPosition.col, color, true)
+        : getPathEnemySquares(board, selectedPosition.row, selectedPosition.col, color, false);
 
       for (const square of pathEnemySquares) {
         if (!visibleSquares.has(square)) unknownEnemySquares.add(square);
       }
 
       if (options.revealFirstLineEnemyAura) {
-        const firstEnemySquares = getFirstPathEnemySquares(
+        const firstEnemySquares = getPathEnemySquares(
           board,
           selectedPosition.row,
           selectedPosition.col,
-          color
+          color,
+          false
         );
 
         for (const square of firstEnemySquares) {
@@ -180,11 +181,12 @@ function findKingSquare(chess: Chess, color: "w" | "b"): Square | null {
   return null;
 }
 
-function getAllPathEnemySquares(
+function getPathEnemySquares(
   board: ReturnType<Chess["board"]>,
   row: number,
   col: number,
-  color: "w" | "b"
+  color: "w" | "b",
+  revealAllBehindFirst: boolean
 ): Square[] {
   const piece = board[row][col];
   if (!piece) return [];
@@ -218,50 +220,18 @@ function getAllPathEnemySquares(
 
   const directions: number[][] = [];
 
-  if (piece.type === "r" || piece.type === "q") {
-    directions.push([-1, 0], [1, 0], [0, -1], [0, 1]);
+  if (piece.type === "k") {
+    directions.push(
+      [-1, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, -1],
+      [0, 1],
+      [1, -1],
+      [1, 0],
+      [1, 1]
+    );
   }
-
-  if (piece.type === "b" || piece.type === "q") {
-    directions.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
-  }
-
-  for (const [rowOffset, colOffset] of directions) {
-    let nextRow = row + rowOffset;
-    let nextCol = col + colOffset;
-
-    while (isInsideBoard(nextRow, nextCol)) {
-      const target = board[nextRow][nextCol];
-
-      if (target?.color === enemyColor) {
-        squares.push(`${FILES[nextCol]}${8 - nextRow}` as Square);
-      }
-
-      nextRow += rowOffset;
-      nextCol += colOffset;
-    }
-  }
-
-  return squares;
-}
-
-function getFirstPathEnemySquares(
-  board: ReturnType<Chess["board"]>,
-  row: number,
-  col: number,
-  color: "w" | "b"
-): Square[] {
-  const piece = board[row][col];
-  if (!piece) return [];
-
-  const enemyColor = color === "w" ? "b" : "w";
-  const squares: Square[] = [];
-
-  if (piece.type === "p" || piece.type === "n") {
-    return getAllPathEnemySquares(board, row, col, color);
-  }
-
-  const directions: number[][] = [];
 
   if (piece.type === "r" || piece.type === "q") {
     directions.push([-1, 0], [1, 0], [0, -1], [0, 1]);
@@ -274,15 +244,20 @@ function getFirstPathEnemySquares(
   for (const [rowOffset, colOffset] of directions) {
     let nextRow = row + rowOffset;
     let nextCol = col + colOffset;
+    let foundFirstEnemy = false;
 
     while (isInsideBoard(nextRow, nextCol)) {
       const target = board[nextRow][nextCol];
 
       if (target?.color === enemyColor) {
         squares.push(`${FILES[nextCol]}${8 - nextRow}` as Square);
+        if (!revealAllBehindFirst) break;
+        foundFirstEnemy = true;
+      } else if (target?.color === color && !foundFirstEnemy) {
         break;
       }
 
+      if (piece.type === "k") break;
       nextRow += rowOffset;
       nextCol += colOffset;
     }
