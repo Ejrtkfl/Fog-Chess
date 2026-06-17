@@ -19,7 +19,7 @@ export async function getStockfishBestMove(
     };
 
     try {
-      worker = new Worker("/stockfish/stockfish.js");
+      worker = new Worker(`${import.meta.env.BASE_URL}stockfish/stockfish.js`);
     } catch {
       finish(null);
       return;
