@@ -663,9 +663,6 @@ export default function App() {
         <div>
           <p className="eyebrow">Web Chess Project</p>
           <h1>Fog Chess</h1>
-          <p className="description">
-            VS AI 모드가 바로 실행됩니다. 안개 체스 코드는 미리 들어가 있으며, 멀티플레이는 WebRTC와 Firebase 연결용 파일이 포함되어 있습니다.
-          </p>
         </div>
       </header>
 
